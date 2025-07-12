@@ -298,5 +298,58 @@ def export_bookmarks():
             "message": f"Export failed: {str(e)}"
         }), 500
 
+@app.route("/help")
+def help():
+    """
+    Provides API usage information with examples for each endpoint.
+    """
+    help_info = {
+        "endpoints": [
+            {
+                "path": "/api/health",
+                "method": "GET",
+                "description": "Check service health",
+                "example_request": "GET /api/health",
+                "example_response": {"status": "ok", "timestamp": "2025-07-12T12:34:56Z"}
+            },
+            {
+                "path": "/api/list",
+                "method": "GET",
+                "description": "List all bookmarks",
+                "example_request": "GET /api/list",
+                "example_response": {"status": "success", "bookmarks": []}
+            },
+            {
+                "path": "/api/create",
+                "method": "POST",
+                "description": "Create a new bookmark",
+                "example_request": "POST /api/create with JSON body {'url': 'http://example.com', 'tags': ['tag1']}" ,
+                "example_response": {"status": "success", "message": "bookmark created successfully", "id": 1, "title": "Example", "favicon": "https://..."}
+            },
+            {
+                "path": "/api/update/<id>",
+                "method": "PUT",
+                "description": "Update an existing bookmark",
+                "example_request": "PUT /api/update/1 with JSON body {'title': 'New Title'}",
+                "example_response": {"status": "success", "message": "bookmark updated successfully", "id": 1, "title": "New Title"}
+            },
+            {
+                "path": "/api/delete/<id>",
+                "method": "DELETE",
+                "description": "Delete a bookmark",
+                "example_request": "DELETE /api/delete/1",
+                "example_response": {"status": "success", "message": "bookmark deleted successfully", "id": 1}
+            },
+            {
+                "path": "/api/export",
+                "method": "GET",
+                "description": "Export bookmarks as SQL dump",
+                "example_request": "GET /api/export",
+                "example_response": {"status": "success", "sql_dump": "...", "total_bookmarks": 0}
+            }
+        ]
+    }
+    return jsonify(help_info), 200
+
 if __name__ == "__main__":
     app.run(port=5570)
