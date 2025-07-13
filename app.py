@@ -365,6 +365,39 @@ def restore_bookmarks():
             "message": f"Restore failed: {str(e)}"
         }), 500
 
+@app.route("/api/tags")
+def get_tags():
+    """Get all unique tags from bookmarks in alphabetical order"""
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute('SELECT tags FROM bookmarks')
+        rows = cursor.fetchall()
+        connection.close()
+        
+        all_tags = set()
+        for row in rows:
+            try:
+                tags = json.loads(row['tags'])
+                if isinstance(tags, list):
+                    all_tags.update(tags)
+            except (json.JSONDecodeError, TypeError):
+                continue
+        
+        sorted_tags = sorted(list(all_tags))
+        
+        return jsonify({
+            "status": "success",
+            "tags": sorted_tags,
+            "total_tags": len(sorted_tags)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to retrieve tags: {str(e)}"
+        }), 500
+
 @app.route("/help")
 def help():
     """
@@ -415,18 +448,18 @@ def help():
                 "example_response": {"status": "success", "sql_dump": "...", "total_bookmarks": 0}
             },
             {
-                "path": "/api/restore",
-                "method": "POST",
-                "description": "Restore bookmarks from SQL dump",
-                "example_request": "POST /api/restore with JSON body {'sql_dump': 'CREATE TABLE...; INSERT INTO...;'}",
-                "example_response": {"status": "success", "message": "Bookmarks restored successfully", "imported_bookmarks": 5}
+                "path": "/api/tags",
+                "method": "GET",
+                "description": "Get all unique tags from bookmarks in alphabetical order",
+                "example_request": "GET /api/tags",
+                "example_response": {"status": "success", "tags": ["docs", "inspiration", "icons"], "total_tags": 3}
             },
             {
                 "path": "/api/restore",
                 "method": "POST",
                 "description": "Restore bookmarks from SQL dump",
-                "example_request": "POST /api/restore with JSON body {'sql_dump': '...'}",
-                "example_response": {"status": "success", "message": "Bookmarks restored successfully"}
+                "example_request": "POST /api/restore with JSON body {'sql_dump': 'CREATE TABLE...; INSERT INTO...;'}",
+                "example_response": {"status": "success", "message": "Bookmarks restored successfully", "imported_bookmarks": 5}
             }
         ]
     }
