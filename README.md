@@ -28,7 +28,7 @@
 
 ```bash
 docker build -t biblioteka-img .
-docker run --name biblioteka --restart always -p 5570:5570 -v biblioteka-data:/app/data biblioteka-img
+docker run -d --name biblioteka --restart always -p 5570:5570 -v biblioteka-data:/app/data biblioteka-img
 ```
 
 ## Running for Development
