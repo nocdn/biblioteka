@@ -13,7 +13,7 @@ CORS(app)
 
 def init_db():
     """Initialize the database and create tables"""
-    connection = sqlite3.connect("bookmarks.db")
+    connection = sqlite3.connect("/app/data/bookmarks.db")
     cursor = connection.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS bookmarks (
@@ -30,7 +30,7 @@ def init_db():
 
 def get_db_connection():
     """Get a new database connection"""
-    connection = sqlite3.connect("bookmarks.db")
+    connection = sqlite3.connect("/app/data/bookmarks.db")
     connection.row_factory = sqlite3.Row
     return connection
 
@@ -352,4 +352,4 @@ def help():
     return jsonify(help_info), 200
 
 if __name__ == "__main__":
-    app.run(port=5570)
+    app.run(host="0.0.0.0", port=5570)
