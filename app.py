@@ -298,6 +298,73 @@ def export_bookmarks():
             "message": f"Export failed: {str(e)}"
         }), 500
 
+@app.route("/api/restore", methods=["POST"])
+def restore_bookmarks():
+    """Restore bookmarks from SQL dump"""
+    try:
+        data = request.json
+        sql_dump = data.get('sql_dump')
+        
+        if not sql_dump:
+            return jsonify({
+                "status": "error",
+                "message": "No SQL dump provided"
+            }), 400
+        
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        
+        # Split the SQL dump into individual statements
+        statements = [stmt.strip() for stmt in sql_dump.split(';') if stmt.strip()]
+        
+        executed_statements = 0
+        imported_bookmarks = 0
+        
+        # Execute each statement
+        for statement in statements:
+            if statement.strip():
+                try:
+                    # Skip comments
+                    if statement.strip().startswith('--'):
+                        continue
+                    
+                    cursor.execute(statement)
+                    executed_statements += 1
+                    
+                    # Count INSERT statements for bookmarks
+                    if statement.upper().strip().startswith('INSERT INTO BOOKMARKS'):
+                        imported_bookmarks += 1
+                        
+                except sqlite3.Error as e:
+                    # If it's a table already exists error, continue
+                    if "already exists" in str(e).lower():
+                        continue
+                    else:
+                        connection.rollback()
+                        connection.close()
+                        return jsonify({
+                            "status": "error",
+                            "message": f"SQL execution error: {str(e)}",
+                            "failed_statement": statement[:100] + "..." if len(statement) > 100 else statement
+                        }), 500
+        
+        connection.commit()
+        connection.close()
+        
+        return jsonify({
+            "status": "success",
+            "message": "Bookmarks restored successfully",
+            "executed_statements": executed_statements,
+            "imported_bookmarks": imported_bookmarks,
+            "restore_date": datetime.now(timezone.utc).isoformat()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Restore failed: {str(e)}"
+        }), 500
+
 @app.route("/help")
 def help():
     """
@@ -346,6 +413,20 @@ def help():
                 "description": "Export bookmarks as SQL dump",
                 "example_request": "GET /api/export",
                 "example_response": {"status": "success", "sql_dump": "...", "total_bookmarks": 0}
+            },
+            {
+                "path": "/api/restore",
+                "method": "POST",
+                "description": "Restore bookmarks from SQL dump",
+                "example_request": "POST /api/restore with JSON body {'sql_dump': 'CREATE TABLE...; INSERT INTO...;'}",
+                "example_response": {"status": "success", "message": "Bookmarks restored successfully", "imported_bookmarks": 5}
+            },
+            {
+                "path": "/api/restore",
+                "method": "POST",
+                "description": "Restore bookmarks from SQL dump",
+                "example_request": "POST /api/restore with JSON body {'sql_dump': '...'}",
+                "example_response": {"status": "success", "message": "Bookmarks restored successfully"}
             }
         ]
     }
